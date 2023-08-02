@@ -158,7 +158,7 @@ contract SSVClusters is ISSVClusters {
         s.accounts[hashedAccount] = account.hashClusterData();
 
         if (amount != 0) {
-            CoreLib.deposit(amount);
+            CoreLib.deposit(cluster.erc20, amount);
         }
 
         emit ValidatorAdded(msg.sender, operatorIds, publicKey, sharesData, cluster);
