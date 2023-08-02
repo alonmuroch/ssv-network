@@ -50,10 +50,6 @@ interface ISSVNetworkCore {
 
     /// @notice Represents a cluster of validators
     struct Cluster {
-        /// @dev The number of validators in the cluster
-        //uint32 validatorCount; // TODO remove
-        /// @dev The index of network fees related to this cluster
-       // uint64 networkFeeIndex; // TODO remove
         /// @dev The last index calculated for the cluster
         uint64 index;
         /// @dev Flag indicating whether the cluster is active
