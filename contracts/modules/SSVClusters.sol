@@ -24,7 +24,8 @@ contract SSVClusters is ISSVClusters {
         uint64[] memory operatorIds,
         bytes calldata sharesData,
         uint256 amount,
-        Cluster memory cluster
+        Cluster memory cluster,
+        Account memory account
     ) external override {
         StorageData storage s = SSVStorage.load();
         StorageProtocol storage sp = SSVStorageProtocol.load();
@@ -70,6 +71,27 @@ contract SSVClusters is ISSVClusters {
             }
         }
 
+        bytes32 hashedAccount = keccak256(abi.encodePacked(msg.sender));
+
+        {
+            bytes32 accountData = s.accounts[hashedAccount];
+            if (accountData == bytes32(0)) {
+//                if (
+//                    cluster.validatorCount != 0 ||
+//                    cluster.networkFeeIndex != 0 ||
+//                    cluster.index != 0 ||
+//                    cluster.balance != 0 ||
+//                !cluster.active
+//                ) {
+//                    revert IncorrectClusterState();
+//                }
+//            } else if (clusterData != cluster.hashClusterData()) {
+//                revert IncorrectClusterState();
+//            } else {
+//                cluster.validateClusterIsNotLiquidated();
+//            }
+        }
+
         cluster.balance += amount;
 
         uint64 burnRate;
@@ -113,12 +135,13 @@ contract SSVClusters is ISSVClusters {
                     ++i;
                 }
             }
-            cluster.updateClusterData(clusterIndex, sp.currentNetworkFeeIndex());
+            cluster.updateClusterData(clusterIndex);
 
             sp.updateDAO(true, 1);
         }
 
-        ++cluster.validatorCount;
+        ++account.validatorCount;
+        account.updateAccountData(msg.sender, sp.currentNetworkFeeIndex());
 
         if (
             cluster.isLiquidatable(
@@ -132,6 +155,7 @@ contract SSVClusters is ISSVClusters {
         }
 
         s.clusters[hashedCluster] = cluster.hashClusterData();
+        s.accounts[hashedAccount] = account.hashClusterData();
 
         if (amount != 0) {
             CoreLib.deposit(amount);

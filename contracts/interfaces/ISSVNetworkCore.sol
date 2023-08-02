@@ -16,6 +16,14 @@ interface ISSVNetworkCore {
         uint64 balance;
     }
 
+    /// @notice
+    struct Account {
+        /// @dev The number of validators in the cluster
+        uint32 validatorCount;
+        /// @dev The index of network fees related to this cluster
+        uint64 networkFeeIndex;
+    }
+
     /// @notice Represents an SSV operator
     struct Operator {
         /// @dev The number of validators associated with this operator
@@ -43,15 +51,17 @@ interface ISSVNetworkCore {
     /// @notice Represents a cluster of validators
     struct Cluster {
         /// @dev The number of validators in the cluster
-        uint32 validatorCount;
+        //uint32 validatorCount; // TODO remove
         /// @dev The index of network fees related to this cluster
-        uint64 networkFeeIndex;
+       // uint64 networkFeeIndex; // TODO remove
         /// @dev The last index calculated for the cluster
         uint64 index;
         /// @dev Flag indicating whether the cluster is active
         bool active;
         /// @dev The balance of the cluster
         uint256 balance;
+        // @dev The ERC20 token used for operator fees
+        address erc20;
     }
 
     /**********/
