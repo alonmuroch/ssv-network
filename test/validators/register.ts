@@ -40,8 +40,25 @@ describe('Register Validator Tests', () => {
     await helpers.DB.ssvToken.connect(helpers.DB.owners[1]).approve(ssvNetworkContract.address, minDepositAmount);
     await expect(ssvNetworkContract.connect(helpers.DB.owners[1]).registerValidatorBulk(
       [helpers.DataGenerator.publicKey(1)],
-      [[1, 2, 3, 4]],
+      [1, 2, 3, 4],
       [helpers.DataGenerator.shares(4)],
+      minDepositAmount,
+      {
+        validatorCount: 0,
+        networkFeeIndex: 0,
+        index: 0,
+        balance: 0,
+        active: true
+      }
+    )).to.emit(ssvNetworkContract, 'ValidatorAdded');
+  });
+
+  it('Register multiple bulk validator with 4 operators emits "ValidatorAdded"', async () => {
+    await helpers.DB.ssvToken.connect(helpers.DB.owners[1]).approve(ssvNetworkContract.address, minDepositAmount);
+    await expect(ssvNetworkContract.connect(helpers.DB.owners[1]).registerValidatorBulk(
+      [helpers.DataGenerator.publicKey(1),helpers.DataGenerator.publicKey(2)],
+      [1, 2, 3, 4],
+      [helpers.DataGenerator.shares(4),helpers.DataGenerator.shares(4)],
       minDepositAmount,
       {
         validatorCount: 0,

@@ -1374,9 +1374,9 @@
         "type": "bytes[]"
       },
       {
-        "internalType": "uint64[][]",
+        "internalType": "uint64[]",
         "name": "operatorIds",
-        "type": "uint64[][]"
+        "type": "uint64[]"
       },
       {
         "internalType": "bytes[]",

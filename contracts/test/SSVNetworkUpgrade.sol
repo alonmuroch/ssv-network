@@ -210,7 +210,7 @@ contract SSVNetworkUpgrade is
 
     function registerValidatorBulk(
         bytes[] calldata publicKeys,
-        uint64[][] memory operatorIds,
+        uint64[] memory operatorIds,
         bytes[] calldata sharesData,
         uint256 amount,
         ISSVNetworkCore.Cluster memory cluster

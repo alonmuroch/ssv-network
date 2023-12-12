@@ -141,7 +141,7 @@ contract SSVClusters is ISSVClusters {
 
     function registerValidatorBulk(
         bytes[] calldata publicKeys,
-        uint64[][] memory operatorIds,
+        uint64[] memory operatorIds,
         bytes[] calldata sharesData,
         uint256 amount,
         Cluster memory cluster
@@ -151,12 +151,8 @@ contract SSVClusters is ISSVClusters {
         StorageData storage s = SSVStorage.load();
         StorageProtocol storage sp = SSVStorageProtocol.load();
 
-        for (uint i=0; i<publicKeys.length; i++) {
-            bytes memory pk = publicKeys[i];
-            uint64[] memory ids = operatorIds[i];
-            bytes memory shares = sharesData[i];
-
-            uint256 operatorsLength = ids.length;
+        // validate
+        uint256 operatorsLength = operatorIds.length;
             {
                 if (
                     operatorsLength < MIN_OPERATORS_LENGTH ||
@@ -166,19 +162,10 @@ contract SSVClusters is ISSVClusters {
                     revert InvalidOperatorIdsLength();
                 }
 
-                if (pk.length != PUBLIC_KEY_LENGTH) revert InvalidPublicKeyLength();
 
-                bytes32 hashedPk = keccak256(abi.encodePacked(pk, msg.sender));
-
-                if (s.validatorPKs[hashedPk] != bytes32(0)) {
-                    revert ValidatorAlreadyExists();
-                }
-
-                s.validatorPKs[hashedPk] = bytes32(uint256(keccak256(abi.encodePacked(ids))) | uint256(0x01)); // set LSB to 1
             }
-            bytes32 hashedCluster = keccak256(abi.encodePacked(msg.sender, ids));
-
-            {
+         bytes32 hashedCluster = keccak256(abi.encodePacked(msg.sender, operatorIds));
+           {
                 bytes32 clusterData = s.clusters[hashedCluster];
                 if (clusterData == bytes32(0)) {
                     if (
@@ -197,20 +184,38 @@ contract SSVClusters is ISSVClusters {
                 }
             }
 
-            cluster.balance += amount;
 
+        cluster.balance += amount;
+
+        for (uint j=0; j<publicKeys.length; j++) {
+            bytes memory pk = publicKeys[j];
+            bytes memory shares = sharesData[j];
+
+            if (pk.length != PUBLIC_KEY_LENGTH) revert InvalidPublicKeyLength();
+
+            {
+                bytes32 hashedPk = keccak256(abi.encodePacked(pk, msg.sender));
+
+                if (s.validatorPKs[hashedPk] != bytes32(0)) {
+                    revert ValidatorAlreadyExists();
+                }
+
+                s.validatorPKs[hashedPk] = bytes32(uint256(keccak256(abi.encodePacked(operatorIds))) | uint256(0x01));  // set LSB to 1
+            }
+        
+           
             uint64 burnRate;
 
             if (cluster.active) {
                 uint64 clusterIndex;
 
                 for (uint256 i; i < operatorsLength; ) {
-                    uint64 operatorId = ids[i];
+                    uint64 operatorId = operatorIds[i];
                     {
                         if (i + 1 < operatorsLength) {
-                            if (operatorId > ids[i + 1]) {
+                            if (operatorId > operatorIds[i + 1]) {
                                 revert UnsortedOperatorsList();
-                            } else if (operatorId == ids[i + 1]) {
+                            } else if (operatorId == operatorIds[i + 1]) {
                                 revert OperatorsListNotUnique();
                             }
                         }
@@ -257,13 +262,12 @@ contract SSVClusters is ISSVClusters {
                 revert InsufficientBalance();
             }
 
-            s.clusters[hashedCluster] = cluster.hashClusterData();
+            emit ValidatorAdded(msg.sender, operatorIds, pk, shares, cluster);
+        }
 
-            if (amount != 0) {
-                CoreLib.deposit(amount);
-            }
-
-            emit ValidatorAdded(msg.sender, ids, pk, shares, cluster);
+        s.clusters[hashedCluster] = cluster.hashClusterData();
+        if (amount != 0) {
+            CoreLib.deposit(amount);
         }
     }
 
