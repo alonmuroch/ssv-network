@@ -54,12 +54,20 @@ describe('Register Validator Tests', () => {
   });
 
   it('Register multiple bulk validator with 4 operators emits "ValidatorAdded"', async () => {
-    await helpers.DB.ssvToken.connect(helpers.DB.owners[1]).approve(ssvNetworkContract.address, minDepositAmount);
+    await helpers.DB.ssvToken.connect(helpers.DB.owners[1]).approve(ssvNetworkContract.address, minDepositAmount*50);
+
+    var publicKeys = [];
+    var shares  = [];
+    for (let i = 0; i < 10; i++) {
+      publicKeys[i] = helpers.DataGenerator.publicKey(i+1);
+      shares[i] = helpers.DataGenerator.shares(4);
+    }
+
     await expect(ssvNetworkContract.connect(helpers.DB.owners[1]).registerValidatorBulk(
-      [helpers.DataGenerator.publicKey(1),helpers.DataGenerator.publicKey(2)],
+      publicKeys,
       [1, 2, 3, 4],
-      [helpers.DataGenerator.shares(4),helpers.DataGenerator.shares(4)],
-      minDepositAmount,
+      shares,
+      minDepositAmount*50,
       {
         validatorCount: 0,
         networkFeeIndex: 0,
