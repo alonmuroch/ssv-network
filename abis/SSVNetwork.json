@@ -842,7 +842,7 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": false,
+        "indexed": true,
         "internalType": "address",
         "name": "owner",
         "type": "address"
@@ -854,7 +854,7 @@
         "type": "uint64[]"
       },
       {
-        "indexed": true,
+        "indexed": false,
         "internalType": "bytes",
         "name": "publicKey",
         "type": "bytes"
@@ -1362,6 +1362,66 @@
       }
     ],
     "name": "registerValidator",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes[]",
+        "name": "publicKeys",
+        "type": "bytes[]"
+      },
+      {
+        "internalType": "uint64[][]",
+        "name": "operatorIds",
+        "type": "uint64[][]"
+      },
+      {
+        "internalType": "bytes[]",
+        "name": "sharesData",
+        "type": "bytes[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint32",
+            "name": "validatorCount",
+            "type": "uint32"
+          },
+          {
+            "internalType": "uint64",
+            "name": "networkFeeIndex",
+            "type": "uint64"
+          },
+          {
+            "internalType": "uint64",
+            "name": "index",
+            "type": "uint64"
+          },
+          {
+            "internalType": "bool",
+            "name": "active",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint256",
+            "name": "balance",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct ISSVNetworkCore.Cluster",
+        "name": "cluster",
+        "type": "tuple"
+      }
+    ],
+    "name": "registerValidatorBulk",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

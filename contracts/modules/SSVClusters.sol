@@ -139,6 +139,134 @@ contract SSVClusters is ISSVClusters {
         emit ValidatorAdded(msg.sender, operatorIds, publicKey, sharesData, cluster);
     }
 
+    function registerValidatorBulk(
+        bytes[] calldata publicKeys,
+        uint64[][] memory operatorIds,
+        bytes[] calldata sharesData,
+        uint256 amount,
+        Cluster memory cluster
+    ) external override {
+        // TODO validator arrays same size
+
+        StorageData storage s = SSVStorage.load();
+        StorageProtocol storage sp = SSVStorageProtocol.load();
+
+        for (uint i=0; i<publicKeys.length; i++) {
+            bytes memory pk = publicKeys[i];
+            uint64[] memory ids = operatorIds[i];
+            bytes memory shares = sharesData[i];
+
+            uint256 operatorsLength = ids.length;
+            {
+                if (
+                    operatorsLength < MIN_OPERATORS_LENGTH ||
+                    operatorsLength > MAX_OPERATORS_LENGTH ||
+                    operatorsLength % MODULO_OPERATORS_LENGTH != 1
+                ) {
+                    revert InvalidOperatorIdsLength();
+                }
+
+                if (pk.length != PUBLIC_KEY_LENGTH) revert InvalidPublicKeyLength();
+
+                bytes32 hashedPk = keccak256(abi.encodePacked(pk, msg.sender));
+
+                if (s.validatorPKs[hashedPk] != bytes32(0)) {
+                    revert ValidatorAlreadyExists();
+                }
+
+                s.validatorPKs[hashedPk] = bytes32(uint256(keccak256(abi.encodePacked(ids))) | uint256(0x01)); // set LSB to 1
+            }
+            bytes32 hashedCluster = keccak256(abi.encodePacked(msg.sender, ids));
+
+            {
+                bytes32 clusterData = s.clusters[hashedCluster];
+                if (clusterData == bytes32(0)) {
+                    if (
+                        cluster.validatorCount != 0 ||
+                        cluster.networkFeeIndex != 0 ||
+                        cluster.index != 0 ||
+                        cluster.balance != 0 ||
+                        !cluster.active
+                    ) {
+                        revert IncorrectClusterState();
+                    }
+                } else if (clusterData != cluster.hashClusterData()) {
+                    revert IncorrectClusterState();
+                } else {
+                    cluster.validateClusterIsNotLiquidated();
+                }
+            }
+
+            cluster.balance += amount;
+
+            uint64 burnRate;
+
+            if (cluster.active) {
+                uint64 clusterIndex;
+
+                for (uint256 i; i < operatorsLength; ) {
+                    uint64 operatorId = ids[i];
+                    {
+                        if (i + 1 < operatorsLength) {
+                            if (operatorId > ids[i + 1]) {
+                                revert UnsortedOperatorsList();
+                            } else if (operatorId == ids[i + 1]) {
+                                revert OperatorsListNotUnique();
+                            }
+                        }
+                    }
+
+                    Operator memory operator = s.operators[operatorId];
+                    if (operator.snapshot.block == 0) {
+                        revert OperatorDoesNotExist();
+                    }
+                    if (operator.whitelisted) {
+                        address whitelisted = s.operatorsWhitelist[operatorId];
+                        if (whitelisted != address(0) && whitelisted != msg.sender) {
+                            revert CallerNotWhitelisted();
+                        }
+                    }
+                    operator.updateSnapshot();
+                    if (++operator.validatorCount > sp.validatorsPerOperatorLimit) {
+                        revert ExceedValidatorLimit();
+                    }
+                    clusterIndex += operator.snapshot.index;
+                    burnRate += operator.fee;
+
+                    s.operators[operatorId] = operator;
+
+                    unchecked {
+                        ++i;
+                    }
+                }
+                cluster.updateClusterData(clusterIndex, sp.currentNetworkFeeIndex());
+
+                sp.updateDAO(true, 1);
+            }
+
+            ++cluster.validatorCount;
+
+            if (
+                cluster.isLiquidatable(
+                    burnRate,
+                    sp.networkFee,
+                    sp.minimumBlocksBeforeLiquidation,
+                    sp.minimumLiquidationCollateral
+                )
+            ) {
+                revert InsufficientBalance();
+            }
+
+            s.clusters[hashedCluster] = cluster.hashClusterData();
+
+            if (amount != 0) {
+                CoreLib.deposit(amount);
+            }
+
+            emit ValidatorAdded(msg.sender, ids, pk, shares, cluster);
+        }
+    }
+
     function removeValidator(
         bytes calldata publicKey,
         uint64[] calldata operatorIds,

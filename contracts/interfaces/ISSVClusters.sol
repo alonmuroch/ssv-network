@@ -18,6 +18,14 @@ interface ISSVClusters is ISSVNetworkCore {
         Cluster memory cluster
     ) external;
 
+    function registerValidatorBulk(
+        bytes[] calldata publicKeys,
+        uint64[][] memory operatorIds,
+        bytes[] calldata sharesData,
+        uint256 amount,
+        Cluster memory cluster
+    ) external;
+
     /// @notice Removes an existing validator from the SSV Network
     /// @param publicKey The public key of the validator to be removed
     /// @param operatorIds Array of IDs of operators managing the validator
